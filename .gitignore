@@ -8,7 +8,9 @@ __pycache__/
 
 # local compose runtime data + secrets
 .env
-/config/*.json
+# ignore everything under config/ (rconpw, server-id.json, lists, live *.json)
+# except the committed reference examples
+/config/*
 !/config/*.example.json
 /saves/
 /mods/
