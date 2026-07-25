@@ -5,3 +5,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# local compose runtime data + secrets
+.env
+/config/*.json
+!/config/*.example.json
+/saves/
+/mods/
+/scenarios/
+/script-output/
+/data/
