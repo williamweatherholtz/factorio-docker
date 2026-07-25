@@ -68,8 +68,9 @@ Build `docker/Dockerfile` with buildx and push to GHCR.
 
 `publish.sh` responsibilities:
 - Read `VERSION`/`SHA256` from `buildinfo.json` (default to the stable entry).
-- `docker buildx build` for `linux/amd64` (and optionally `linux/arm64`) with
-  those build args, tagging all the tags above.
+- `docker buildx build` for `linux/amd64,linux/arm64` (multi-arch by default,
+  matching upstream's supported platforms) with those build args, tagging all
+  the tags above. A `--amd64-only` flag skips ARM for faster local iteration.
 - `--push` to GHCR.
 - Print the resulting image ref(s).
 
@@ -249,7 +250,7 @@ docker-entrypoint.sh:
 flag. This is an intentional divergence from `factoriotools/factorio-docker`,
 acceptable because we ship our own GHCR image.
 
-## Open questions (resolve in plan)
+## Open questions
 
-- Whether `publish.sh` builds multi-arch (`linux/amd64,linux/arm64`) by default
-  or amd64-only with an opt-in flag.
+None outstanding. (`publish.sh` builds `linux/amd64,linux/arm64` by default with
+an opt-in `--amd64-only` flag.)
