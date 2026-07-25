@@ -17,4 +17,12 @@ out="$(bash "$SCRIPT" --print --amd64-only)"
 assert_contains "$out" "--platform linux/amd64 " "amd64-only narrows platform"
 [[ "$out" != *"linux/arm64"* ]] || fail "--amd64-only must not include arm64"
 
+# Duplicate-tag warning (goes to stderr): "2" is defined under both versions.
+errout="$(bash "$SCRIPT" --print 2>&1 >/dev/null)"
+assert_contains "$errout" "tag '2' is defined under multiple versions" "warns on duplicate tag"
+
+# --print must not run registry prechecks (no auth/builder required for dry run).
+out="$(bash "$SCRIPT" --print 2>/dev/null)"
+assert_contains "$out" "docker buildx build" "--print stays a dry run"
+
 pass

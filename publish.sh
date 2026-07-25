@@ -21,6 +21,30 @@ done
 
 command -v jq >/dev/null || { echo "jq is required" >&2; exit 1; }
 
+# Warn about tags defined under more than one version: whichever version builds
+# last wins for that tag (e.g. "2" currently resolves to the newest 2.x).
+while IFS= read -r dup; do
+  [[ -n "$dup" ]] && echo "WARN: tag '$dup' is defined under multiple versions; the last-built version wins for :$dup" >&2
+done < <(jq -r '[.[].tags[]] | group_by(.) | map(select(length > 1)[0]) | .[]' buildinfo.json | tr -d '\r')
+
+# Prechecks before mutating the registry (skipped for --print dry runs).
+if [[ "$PRINT" -eq 0 ]]; then
+  if [[ "$PLATFORMS" == *,* ]]; then
+    driver="$(docker buildx inspect 2>/dev/null | sed -n 's/^Driver:[[:space:]]*//p' | tr -d '\r')"
+    if [[ "$driver" != "docker-container" ]]; then
+      echo "ERROR: multi-arch build needs a docker-container builder (current driver: '${driver:-none}')." >&2
+      echo "       Run: docker buildx create --use   (or pass --amd64-only for a single-arch build)" >&2
+      exit 1
+    fi
+  fi
+  cfg_dir="${DOCKER_CONFIG:-$HOME/.docker}"
+  if ! grep -q "ghcr.io" "$cfg_dir/config.json" 2>/dev/null; then
+    echo "ERROR: no ghcr.io credentials found in $cfg_dir/config.json." >&2
+    echo "       Run: gh auth token | docker login ghcr.io -u williamweatherholtz --password-stdin" >&2
+    exit 1
+  fi
+fi
+
 # tr -d '\r' guards against a native Windows jq emitting CRLF; no-op on Linux.
 for version in $(jq -r 'keys[]' buildinfo.json | tr -d '\r'); do
   sha="$(jq -r --arg v "$version" '.[$v].sha256' buildinfo.json | tr -d '\r')"

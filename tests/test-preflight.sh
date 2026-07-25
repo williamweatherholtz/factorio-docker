@@ -32,4 +32,15 @@ if out="$(bash "$SCRIPT" "$cfg" 2>&1)"; then fail "directory path must exit non-
 assert_contains "$out" "ERROR" "directory path errors"
 assert_contains "$out" "DIRECTORY" "error message names the symptom"
 
+# Case D: a missing config dir is fine (entrypoint creates it) -> exit 0.
+set +e
+out="$(bash "$SCRIPT" "$work/does-not-exist" 2>&1)"; rc=$?
+set -e
+assert_eq "0" "$rc" "missing config dir is non-fatal"
+
+# Case E: config dir is actually a FILE -> ERROR + exit 1.
+filecfg="$work/config-as-file"; : > "$filecfg"
+if out="$(bash "$SCRIPT" "$filecfg" 2>&1)"; then fail "config-dir-as-file must exit non-zero"; fi
+assert_contains "$out" "not a directory" "file-as-config-dir errors"
+
 pass

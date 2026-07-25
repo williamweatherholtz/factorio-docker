@@ -9,6 +9,17 @@ CONFIG_DIR="${1:-${CONFIG:-/factorio/config}}"
 DEBUG="${DEBUG:-false}"
 status=0
 
+# The config dir itself: if the path exists it must be a writable directory.
+# (A missing path is fine — the entrypoint creates it. But a bind-mounted file,
+# or a read-only mount, would otherwise fail later with a cryptic error.)
+if [[ -e "$CONFIG_DIR" && ! -d "$CONFIG_DIR" ]]; then
+  echo "ERROR: $CONFIG_DIR exists but is not a directory. Expected a config directory — check your bind mount." >&2
+  status=1
+elif [[ -d "$CONFIG_DIR" && ! -w "$CONFIG_DIR" ]]; then
+  echo "ERROR: $CONFIG_DIR is not writable. The server needs to write rconpw, server-id.json, and ban/white/admin lists here." >&2
+  status=1
+fi
+
 for f in server-settings.json map-gen-settings.json map-settings.json; do
   path="$CONFIG_DIR/$f"
   if [[ -d "$path" ]]; then

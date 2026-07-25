@@ -156,6 +156,28 @@ string because Factorio expects the literal `"admins-only"` among its values.
 `game_password` (`.game_password`) is intentionally **not** in the overlay set
 (not requested); trivial to add later as `GAME_PASSWORD`.
 
+**Post-review revisions (2026-07-25, after adversarial critique):**
+
+- Override guard changed from `${VAR+set}` (set-even-if-empty) to `${VAR:+set}`
+  (set-and-non-empty). A blank placeholder in `.env` (e.g. `MAX_PLAYERS=`) is now
+  ignored instead of crashing the container (`jq --argjson v ""` errored → boot
+  loop) or silently writing an empty string.
+- Added value validation before jq: ints `^[0-9]+$`, bools `^(true|false)$`,
+  `ALLOW_COMMANDS` the `true|false|admins-only` enum. Invalid values abort with a
+  clear error rather than writing a wrong-typed config (`AUTO_PAUSE=1` wrote a
+  number; `ALLOW_COMMANDS=banana` reached Factorio and crashed it).
+- Rendered file now uses a `mktemp` path instead of the fixed
+  `/tmp/server-settings.rendered.json` (removes a predictable-path symlink
+  surface).
+- Preflight also verifies the config dir isn't a bind-mounted file and is
+  writable, and runs before the entrypoint's `mkdir` so it owns the diagnostic.
+- Compose pins an explicit image tag (not `:stable`), sets
+  `stop_grace_period: 120s` + `stop_signal: SIGINT` (avoid truncating the
+  shutdown save), and marks `.env` `required: false` (fresh clone can `up` before
+  `setup.sh`). RCON remains published on all interfaces by explicit owner choice.
+- `publish.sh` warns on tags shared across versions (the `2` tag) and prechecks
+  buildx multi-arch driver + ghcr.io credentials before pushing.
+
 ### 5. Preflight checks / debug output
 
 Add a preflight block at entrypoint start (before the seeding block). For each

@@ -49,7 +49,8 @@ assert_eq "/factorio/config/server-settings.json" "$(field "$out" 'EFFECTIVE_SER
 
 # SERVER_NAME
 out="$(run -e SERVER_NAME='E2E Name')"
-assert_eq "/tmp/server-settings.rendered.json" "$(field "$out" 'EFFECTIVE_SERVER_SETTINGS_PATH')" "override uses rendered path"
+rp="$(field "$out" 'EFFECTIVE_SERVER_SETTINGS_PATH')"
+[[ "$rp" != "/factorio/config/server-settings.json" && -n "$rp" ]] || fail "override must use a rendered temp path, not the base file (got '$rp')"
 assert_eq "E2E Name" "$(settings_json "$out" | jqr .name)" "SERVER_NAME endpoint"
 
 # SERVER_DESCRIPTION
