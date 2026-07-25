@@ -1,0 +1,15 @@
+# Derived image for e2e tests: swaps the real factorio binary for a shim that
+# records how the entrypoint launched it. Built on top of the real server image.
+ARG BASE
+FROM ${BASE}
+
+COPY factorio-shim.sh /opt/factorio/bin/x64/factorio
+RUN chmod +x /opt/factorio/bin/x64/factorio
+
+# Pre-seeded mod-list at a non-volume path so DLC enable/disable is observable.
+# (docker-dlc.sh's enable_mod only flips an existing disabled mod; disable_mod
+# adds one if absent. A fresh list therefore can't exercise the enable path.)
+# e2e DLC cases run with -e MODS=/opt/e2e-mods to use this list.
+RUN mkdir -p /opt/e2e-mods && \
+    printf '%s' '{"mods":[{"name":"base","enabled":true},{"name":"space-age","enabled":false},{"name":"quality","enabled":false},{"name":"elevated-rails","enabled":false}]}' \
+    > /opt/e2e-mods/mod-list.json
