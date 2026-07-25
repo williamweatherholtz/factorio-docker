@@ -1,13 +1,22 @@
 services:
   factorio:
     container_name: factorio
-    image: ghcr.io/williamweatherholtz/factorio:stable
+    # Pinned to an explicit version so an unattended :stable push can't jump
+    # Factorio versions and break saves/mods. Bump this deliberately.
+    image: ghcr.io/williamweatherholtz/factorio:2.0.77
     restart: unless-stopped
+    # Give Factorio time to flush its save on shutdown before SIGKILL (default is
+    # only 10s). SIGINT is Factorio's clean-quit signal.
+    stop_signal: SIGINT
+    stop_grace_period: 120s
     ports:
       - "34197:34197/udp"
-      - "27015:27015/tcp"
+      - "27015:27015/tcp"   # RCON — reachable on all interfaces; protect via firewall/password
     env_file:
-      - .env
+      # Optional: a fresh clone can `docker compose up` before ./setup.sh creates
+      # .env (all keys are opt-in overrides).
+      - path: .env
+        required: false
     volumes:
       - ./config:/factorio/config              # server-settings, map-*, rconpw, lists, server-id
       - ./saves:/factorio/saves                # back these up
@@ -19,7 +28,7 @@ services:
     #labels:
     #  - com.centurylinklabs.watchtower.enable=true
     #  - com.centurylinklabs.watchtower.scope=factorio
-    #  - com.centurylinklabs.watchtower.lifecycle.pre-update="/players-online.sh"
+    #  - com.centurylinklabs.watchtower.lifecycle.pre-update=/players-online.sh
 
   # Uncomment to use watchtower for updating the factorio container
   # Full documentation: https://github.com/containrrr/watchtower

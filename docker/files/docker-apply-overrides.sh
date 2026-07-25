@@ -1,38 +1,55 @@
 #!/bin/bash
 # Render effective server-settings.json from a base file plus env-var overrides.
 # The base file is never modified. Prints to stdout the path that should be
-# passed to factorio's --server-settings (the rendered temp file if any override
+# passed to factorio's --server-settings (a rendered temp file if any override
 # was applied, otherwise the base path). Diagnostics go to stderr.
+#
+# An override is applied only when its env var is set AND non-empty, so blank
+# placeholders in .env are ignored rather than fatal. Bool/int/enum values are
+# validated before they reach jq to avoid silently writing a wrong-typed config.
 set -euo pipefail
 
 BASE="${1:-${CONFIG:-/factorio/config}/server-settings.json}"
-OUT="${2:-/tmp/server-settings.rendered.json}"
+OUT="${2:-}"
+[[ -n "$OUT" ]] || OUT="$(mktemp)"   # unpredictable path avoids /tmp symlink games
 DEBUG="${DEBUG:-false}"
 
 log() { [[ "$DEBUG" == "true" ]] && echo "docker-apply-overrides: $1" >&2 || true; }
+die() { echo "docker-apply-overrides ERROR: $1" >&2; exit 2; }
 
 changed=0
 cp "$BASE" "$OUT"
 
-# $1 = jq path, $2 = value, $3 = jq value-flag (--arg for strings, --argjson for num/bool)
-patch() {
-  local path="$1" value="$2" flag="$3" tmp
+# apply <kind> <ENV_VAR_NAME> <jq-path>
+#   kind: str | int | bool | enum_cmd
+# Skips when the env var is unset or empty. Validates the value per kind.
+apply() {
+  local kind="$1" name="$2" path="$3"
+  [[ -n "${!name:+set}" ]] || return 0        # unset or empty -> leave file value
+  local value="${!name}" flag="--arg" tmp
+  case "$kind" in
+    int)      [[ "$value" =~ ^[0-9]+$ ]]            || die "$name must be a non-negative integer (got '$value')"; flag="--argjson" ;;
+    bool)     [[ "$value" =~ ^(true|false)$ ]]      || die "$name must be 'true' or 'false' (got '$value')";       flag="--argjson" ;;
+    enum_cmd) [[ "$value" =~ ^(true|false|admins-only)$ ]] || die "$name must be 'true', 'false', or 'admins-only' (got '$value')" ;;
+    str)      : ;;
+    *)        die "unknown kind '$kind'" ;;
+  esac
   tmp="$(jq "$flag" v "$value" "$path = \$v" "$OUT")"
   printf '%s\n' "$tmp" > "$OUT"
   changed=1
   log "set $path = $value"
 }
 
-[[ -n "${SERVER_NAME+set}" ]]                 && patch '.name'                       "$SERVER_NAME"                 --arg
-[[ -n "${SERVER_DESCRIPTION+set}" ]]          && patch '.description'                "$SERVER_DESCRIPTION"          --arg
-[[ -n "${MAX_PLAYERS+set}" ]]                 && patch '.max_players'                "$MAX_PLAYERS"                 --argjson
-[[ -n "${SERVER_VISIBILITY_PUBLIC+set}" ]]    && patch '.visibility.public'          "$SERVER_VISIBILITY_PUBLIC"    --argjson
-[[ -n "${SERVER_VISIBILITY_LAN+set}" ]]       && patch '.visibility.lan'             "$SERVER_VISIBILITY_LAN"       --argjson
-[[ -n "${REQUIRE_USER_VERIFICATION+set}" ]]   && patch '.require_user_verification'  "$REQUIRE_USER_VERIFICATION"   --argjson
-[[ -n "${AUTO_PAUSE+set}" ]]                  && patch '.auto_pause'                 "$AUTO_PAUSE"                  --argjson
-[[ -n "${AFK_AUTOKICK_INTERVAL+set}" ]]       && patch '.afk_autokick_interval'      "$AFK_AUTOKICK_INTERVAL"       --argjson
-[[ -n "${ALLOW_COMMANDS+set}" ]]              && patch '.allow_commands'             "$ALLOW_COMMANDS"              --arg
-[[ -n "${AUTOSAVE_INTERVAL+set}" ]]           && patch '.autosave_interval'          "$AUTOSAVE_INTERVAL"           --argjson
+apply str      SERVER_NAME                .name
+apply str      SERVER_DESCRIPTION         .description
+apply int      MAX_PLAYERS                .max_players
+apply bool     SERVER_VISIBILITY_PUBLIC   .visibility.public
+apply bool     SERVER_VISIBILITY_LAN      .visibility.lan
+apply bool     REQUIRE_USER_VERIFICATION  .require_user_verification
+apply bool     AUTO_PAUSE                 .auto_pause
+apply int      AFK_AUTOKICK_INTERVAL      .afk_autokick_interval
+apply enum_cmd ALLOW_COMMANDS             .allow_commands
+apply int      AUTOSAVE_INTERVAL          .autosave_interval
 
 if [[ "$changed" -eq 1 ]]; then
   chmod 0644 "$OUT"

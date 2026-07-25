@@ -53,6 +53,10 @@ docker compose up -d
 | `ALLOW_COMMANDS` | `allow_commands` | string (`true`/`false`/`admins-only`) |
 | `AUTOSAVE_INTERVAL` | `autosave_interval` | number |
 
+Blank values in `.env` are ignored (the file value stands); mistyped values
+(e.g. a non-numeric `MAX_PLAYERS`, or `ALLOW_COMMANDS=banana`) abort the boot
+with a clear error instead of writing a broken config.
+
 Set `DEBUG=true` in `.env` for verbose boot diagnostics. If a config path shows
 up as a **directory** the server aborts with guidance to run `./setup.sh`.
 

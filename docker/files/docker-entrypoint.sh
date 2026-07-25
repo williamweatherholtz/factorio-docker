@@ -9,16 +9,17 @@ SAVE_NAME="${SAVE_NAME:-""}"
 BIND="${BIND:-""}"
 CONSOLE_LOG_LOCATION="${CONSOLE_LOG_LOCATION:-""}"
 
+# Validate config early (before creating dirs) so a mis-mounted config path
+# — a bind-mounted file, a read-only mount, or a JSON file that is actually a
+# directory — aborts with an actionable message instead of a cryptic later error.
+"${INSTALLED_DIRECTORY}"/docker-preflight.sh "$CONFIG"
+
 mkdir -p "$FACTORIO_VOL"
 mkdir -p "$SAVES"
 mkdir -p "$CONFIG"
 mkdir -p "$MODS"
 mkdir -p "$SCENARIOS"
 mkdir -p "$SCRIPTOUTPUT"
-
-# Validate config files early; abort on a fatal mis-mount (e.g. a JSON path that
-# became a directory because its host bind-mount source was missing).
-"${INSTALLED_DIRECTORY}"/docker-preflight.sh "$CONFIG"
 
 if [[ ! -f $CONFIG/rconpw ]]; then
   # Generate a new RCON password if none exists
