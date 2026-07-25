@@ -18,6 +18,59 @@
 * `0.x.y` - a specific version.
 * `0.x-z` - incremental fix for that version.
 
+## Self-hosted image (GHCR) + config-first compose
+
+This fork publishes to `ghcr.io/williamweatherholtz/factorio` and ships a
+compose stack where server configuration lives in editable repo files.
+
+### First-time setup
+
+```bash
+./setup.sh          # seeds ./config/*.json, ./saves, ./mods, ... and .env
+docker compose up -d
+```
+
+### Two config tiers
+
+1. **Files (source of truth).** Edit `config/server-settings.json`,
+   `config/map-gen-settings.json`, `config/map-settings.json` directly, then
+   `docker compose restart factorio`. These files are bind-mounted and are never
+   modified by the container.
+2. **Env overrides (hot keys).** Uncomment keys in `.env` to override the
+   matching `server-settings.json` values **at boot only** — the JSON file on
+   disk stays untouched (overrides render to a temp file inside the container).
+
+| `.env` var | server-settings.json key | type |
+|---|---|---|
+| `SERVER_NAME` | `name` | string |
+| `SERVER_DESCRIPTION` | `description` | string |
+| `MAX_PLAYERS` | `max_players` | number |
+| `SERVER_VISIBILITY_PUBLIC` | `visibility.public` | bool |
+| `SERVER_VISIBILITY_LAN` | `visibility.lan` | bool |
+| `REQUIRE_USER_VERIFICATION` | `require_user_verification` | bool |
+| `AUTO_PAUSE` | `auto_pause` | bool |
+| `AFK_AUTOKICK_INTERVAL` | `afk_autokick_interval` | number |
+| `ALLOW_COMMANDS` | `allow_commands` | string (`true`/`false`/`admins-only`) |
+| `AUTOSAVE_INTERVAL` | `autosave_interval` | number |
+
+Set `DEBUG=true` in `.env` for verbose boot diagnostics. If a config path shows
+up as a **directory** the server aborts with guidance to run `./setup.sh`.
+
+### Backups
+
+`./saves`, `./mods`, and `./config` are plain host directories — back them up by
+copying, no volume archaeology required.
+
+### Publishing the image
+
+```bash
+gh auth token | docker login ghcr.io -u williamweatherholtz --password-stdin
+./publish.sh                # linux/amd64,linux/arm64
+./publish.sh --amd64-only   # faster local iteration
+```
+
+`publish.sh` reads versions and tags from `buildinfo.json`.
+
 ## What is Factorio?
 
 [Factorio](https://www.factorio.com) is a game in which you build and maintain factories.

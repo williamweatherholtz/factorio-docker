@@ -16,6 +16,10 @@ mkdir -p "$MODS"
 mkdir -p "$SCENARIOS"
 mkdir -p "$SCRIPTOUTPUT"
 
+# Validate config files early; abort on a fatal mis-mount (e.g. a JSON path that
+# became a directory because its host bind-mount source was missing).
+"${INSTALLED_DIRECTORY}"/docker-preflight.sh "$CONFIG"
+
 if [[ ! -f $CONFIG/rconpw ]]; then
   # Generate a new RCON password if none exists
   pwgen 15 1 >"$CONFIG/rconpw"
@@ -33,6 +37,10 @@ fi
 if [[ ! -f $CONFIG/map-settings.json ]]; then
   cp /opt/factorio/data/map-settings.example.json "$CONFIG/map-settings.json"
 fi
+
+# Apply env-var overrides onto a rendered copy of server-settings.json without
+# mutating the committed file. Prints the path to use for --server-settings.
+SERVER_SETTINGS_FILE="$("${INSTALLED_DIRECTORY}"/docker-apply-overrides.sh "$CONFIG/server-settings.json")"
 
 NRTMPSAVES=$( find -L "$SAVES" -iname \*.tmp.zip -mindepth 1 | wc -l )
 if [[ $NRTMPSAVES -gt 0 ]]; then
@@ -94,7 +102,7 @@ fi
 
 FLAGS=(\
   --port "$PORT" \
-  --server-settings "$CONFIG/server-settings.json" \
+  --server-settings "$SERVER_SETTINGS_FILE" \
   --server-banlist "$CONFIG/server-banlist.json" \
   --rcon-port "$RCON_PORT" \
   --server-whitelist "$CONFIG/server-whitelist.json" \
