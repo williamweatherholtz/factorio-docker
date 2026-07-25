@@ -12,6 +12,11 @@ assert_contains "$cfg" "/factorio/config" "config bind mount present"
 assert_contains "$cfg" "/factorio/saves" "saves bind mount present"
 assert_contains "$cfg" "/factorio/mods" "mods bind mount present"
 assert_contains "$cfg" "stop_grace_period" "stop_grace_period set"
+assert_contains "$cfg" "rcon /players" "RCON healthcheck configured"
+assert_contains "$cfg" "max-size" "log rotation configured"
+
+# The build-from-source compose must be gone (single stack only).
+[[ ! -f "$REPO/docker/docker-compose.yml" ]] || fail "docker/docker-compose.yml should be removed (single compose)"
 
 # --- without .env: must still resolve (env_file required:false) ---
 env_backup=""

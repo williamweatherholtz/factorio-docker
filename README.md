@@ -410,34 +410,18 @@ The files in this volume should be owned by the factorio user, uid 845.
 * docker-engine >= 1.10.0 is required
 * docker-compose >=1.6.0 is required
 
-First get a [docker-compose.yml](https://github.com/factoriotools/factorio-docker/blob/master/docker/docker-compose.yml) file. To get it from this repository:
+This repository ships a single [`docker-compose.yml`](docker-compose.yml) at the
+project root that runs the published GHCR image. Clone the repo and use it:
 
 ```shell
-git clone https://github.com/factoriotools/factorio-docker.git
-cd factorio-docker/docker
+git clone https://github.com/williamweatherholtz/factorio-docker.git
+cd factorio-docker
+./setup.sh            # seeds ./config/*.json, data dirs, and .env
+docker compose up -d
 ```
 
-Or make your own:
-
-```yaml
-version: '2'
-services:
-  factorio:
-    image: factoriotools/factorio
-    ports:
-     - "34197:34197/udp"
-     - "27015:27015/tcp"
-    volumes:
-     - /opt/factorio:/factorio
-```
-
-Now cd to the directory with docker-compose.yml and run:
-
-```shell
-sudo mkdir -p /opt/factorio
-sudo chown 845:845 /opt/factorio
-sudo docker-compose up -d
-```
+See [Self-hosted image (GHCR) + config-first compose](#self-hosted-image-ghcr--config-first-compose)
+above for tuning server parameters via files or environment variables.
 
 ### Ports
 

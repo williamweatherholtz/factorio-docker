@@ -366,33 +366,13 @@ factorio_1:
 * 需要 docker-engine >= 1.10.0
 * 需要 docker-compose >=1.6.0
 
-首先获取一个 [docker-compose.yml](https://github.com/factoriotools/factorio-docker/blob/master/docker/docker-compose.yml) 文件。从此仓库获取：
+本仓库在项目根目录提供了单一的 [`docker-compose.yml`](docker-compose.yml)，用于运行已发布的 GHCR 镜像。克隆仓库后即可使用：
 
 ```shell
-git clone https://github.com/factoriotools/factorio-docker.git
-cd factorio-docker/docker
-```
-
-或者创建你自己的：
-
-```yaml
-version: '2'
-services:
-  factorio:
-    image: factoriotools/factorio
-    ports:
-     - "34197:34197/udp"
-     - "27015:27015/tcp"
-    volumes:
-     - /opt/factorio:/factorio
-```
-
-现在 cd 到包含 docker-compose.yml 的目录并运行：
-
-```shell
-sudo mkdir -p /opt/factorio
-sudo chown 845:845 /opt/factorio
-sudo docker-compose up -d
+git clone https://github.com/williamweatherholtz/factorio-docker.git
+cd factorio-docker
+./setup.sh            # 生成 ./config/*.json、数据目录和 .env
+docker compose up -d
 ```
 
 ### 端口
