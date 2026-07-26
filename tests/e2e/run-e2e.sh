@@ -18,19 +18,20 @@ VERSION="2.0.77"
 SHA="$(jq -r --arg v "$VERSION" '.[$v].sha256' "$REPO/buildinfo.json" | tr -d '\r')"
 
 # --- build images -----------------------------------------------------------
+# Use plain `docker build` (default docker driver, local image store) so the
+# derived image can FROM the locally-built base. A docker-container buildx
+# builder cannot see local-only images.
 if ! docker image inspect "$BASE" >/dev/null 2>&1; then
   echo "building base image $BASE (one-time)..."
-  docker buildx build "$REPO/docker" \
-    --platform linux/amd64 \
+  docker build "$REPO/docker" \
     --build-arg "VERSION=$VERSION" --build-arg "SHA256=$SHA" \
-    -t "$BASE" --load >/dev/null
+    -t "$BASE" >/dev/null
 fi
 echo "building e2e shim image $E2E..."
-docker buildx build "$REPO/tests/e2e" \
+docker build "$REPO/tests/e2e" \
   -f "$REPO/tests/e2e/Dockerfile.e2e" \
-  --platform linux/amd64 \
   --build-arg "BASE=$BASE" \
-  -t "$E2E" --load >/dev/null
+  -t "$E2E" >/dev/null
 
 # --- helpers ----------------------------------------------------------------
 run() { MSYS_NO_PATHCONV=1 docker run --rm "$@" "$E2E" 2>&1; }   # extra args = -e KEY=VAL ...
@@ -96,6 +97,12 @@ assert_eq "string" "$(settings_json "$out" | jqr '.allow_commands|type')" "ALLOW
 out="$(run -e AUTOSAVE_INTERVAL=15)"
 assert_eq "15" "$(settings_json "$out" | jqr .autosave_interval)" "AUTOSAVE_INTERVAL value"
 assert_eq "number" "$(settings_json "$out" | jqr '.autosave_interval|type')" "AUTOSAVE_INTERVAL is number"
+
+# Account linking: USERNAME/TOKEN written into the rendered server-settings.
+out="$(run -e USERNAME=alice -e TOKEN=cafebabe)"
+js="$(settings_json "$out")"
+assert_eq "alice" "$(printf '%s' "$js" | jqr .username)" "USERNAME -> .username"
+assert_eq "cafebabe" "$(printf '%s' "$js" | jqr .token)" "TOKEN -> .token"
 
 # Combined: multiple overrides applied together; an unset key keeps its default.
 out="$(run -e SERVER_NAME='Combo' -e MAX_PLAYERS=8 -e AUTO_PAUSE=false)"

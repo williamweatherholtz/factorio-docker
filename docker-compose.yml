@@ -52,10 +52,13 @@ services:
       #AFK_AUTOKICK_INTERVAL: "0"          # minutes; 0 = never
       #ALLOW_COMMANDS: "admins-only"       # true | false | admins-only
       #AUTOSAVE_INTERVAL: "10"             # minutes
-      # --- orchestration (read by the entrypoint, not part of server-settings) ---
-      #UPDATE_MODS_ON_START: "true"        # needs USERNAME/TOKEN below
+      # --- account linking (factorio.com/profile) ---
+      # Enables public server-browser listing AND mod auto-download. Written into
+      # the rendered server-settings at boot; never persisted to the committed JSON.
       #USERNAME: ""
       #TOKEN: ""
+      # --- orchestration (read by the entrypoint, not part of server-settings) ---
+      #UPDATE_MODS_ON_START: "true"        # needs USERNAME/TOKEN above
       #DEBUG: "false"                      # verbose boot diagnostics
       #PUID: "845"
       #PGID: "845"
