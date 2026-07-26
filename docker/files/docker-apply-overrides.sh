@@ -50,6 +50,11 @@ apply bool     AUTO_PAUSE                 .auto_pause
 apply int      AFK_AUTOKICK_INTERVAL      .afk_autokick_interval
 apply enum_cmd ALLOW_COMMANDS             .allow_commands
 apply int      AUTOSAVE_INTERVAL          .autosave_interval
+# Account linking: username + token from factorio.com/profile. Writing them into
+# the (rendered) server-settings lets the server register in the public browser.
+# The committed base file is never touched, so the token isn't persisted to disk.
+apply str      USERNAME                   .username
+apply str      TOKEN                      .token
 
 if [[ "$changed" -eq 1 ]]; then
   chmod 0644 "$OUT"

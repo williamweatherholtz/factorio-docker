@@ -52,6 +52,13 @@ docker compose up -d
 | `AFK_AUTOKICK_INTERVAL` | `afk_autokick_interval` | number |
 | `ALLOW_COMMANDS` | `allow_commands` | string (`true`/`false`/`admins-only`) |
 | `AUTOSAVE_INTERVAL` | `autosave_interval` | number |
+| `USERNAME` | `username` | string (account linking) |
+| `TOKEN` | `token` | string (account linking) |
+
+`USERNAME`/`TOKEN` (from [factorio.com/profile](https://factorio.com/profile))
+link the server to your account — required to appear in the **public** in-game
+server browser, and reused for mod auto-download. They're written into the
+rendered settings at boot only, never saved to the committed JSON.
 
 Blank values in `.env` are ignored (the file value stands); mistyped values
 (e.g. a non-numeric `MAX_PLAYERS`, or `ALLOW_COMMANDS=banana`) abort the boot

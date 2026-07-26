@@ -5,6 +5,11 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 source "$REPO/tests/lib.sh"
 SCRIPT="$REPO/docker/files/docker-apply-overrides.sh"
 
+# Clear any ambient values (e.g. Windows sets USERNAME) so cases are deterministic.
+unset SERVER_NAME SERVER_DESCRIPTION MAX_PLAYERS SERVER_VISIBILITY_PUBLIC \
+      SERVER_VISIBILITY_LAN REQUIRE_USER_VERIFICATION AUTO_PAUSE \
+      AFK_AUTOKICK_INTERVAL ALLOW_COMMANDS AUTOSAVE_INTERVAL USERNAME TOKEN 2>/dev/null || true
+
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 base="$work/base.json"
 cat > "$base" <<'JSON'
@@ -63,6 +68,11 @@ fi
 # Case G: valid allow_commands enum value is accepted.
 result="$(ALLOW_COMMANDS=admins-only bash "$SCRIPT" "$base" "$out")"
 assert_eq "admins-only" "$(jq -r '.allow_commands' "$out")" "valid enum accepted"
+
+# Case I: account linking — USERNAME/TOKEN write into server-settings.
+result="$(USERNAME='bob' TOKEN='deadbeef' bash "$SCRIPT" "$base" "$out")"
+assert_eq "bob" "$(jq -r '.username' "$out")" "USERNAME -> .username"
+assert_eq "deadbeef" "$(jq -r '.token' "$out")" "TOKEN -> .token"
 
 # Case H: no out-path arg -> renders to a mktemp file whose path is printed.
 result="$(SERVER_NAME='Temp' bash "$SCRIPT" "$base")"
