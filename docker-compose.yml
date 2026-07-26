@@ -42,12 +42,16 @@ services:
       # Space Age DLC is on by default; set "false" to disable. (Active so this
       # block is a valid mapping — everything below is a commented example.)
       DLC_SPACE_AGE: "true"
+      # LAN preset (default): not listed in the public browser, discoverable on
+      # LAN, and no auth-server verification — works even on an offline LAN.
+      # To go public instead: set PUBLIC "true", REQUIRE_USER_VERIFICATION "true",
+      # and provide USERNAME/TOKEN below.
+      SERVER_VISIBILITY_PUBLIC: "false"
+      SERVER_VISIBILITY_LAN: "true"
+      REQUIRE_USER_VERIFICATION: "false"
       #SERVER_NAME: "My Factorio Server"
       #SERVER_DESCRIPTION: "Hosted with Docker"
       #MAX_PLAYERS: "0"                    # 0 = unlimited
-      #SERVER_VISIBILITY_PUBLIC: "false"   # list in the public server browser
-      #SERVER_VISIBILITY_LAN: "true"
-      #REQUIRE_USER_VERIFICATION: "true"
       #AUTO_PAUSE: "true"
       #AFK_AUTOKICK_INTERVAL: "0"          # minutes; 0 = never
       #ALLOW_COMMANDS: "admins-only"       # true | false | admins-only

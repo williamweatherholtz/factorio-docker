@@ -60,6 +60,13 @@ link the server to your account — required to appear in the **public** in-game
 server browser, and reused for mod auto-download. They're written into the
 rendered settings at boot only, never saved to the committed JSON.
 
+**Default is a LAN preset.** The shipped `docker-compose.yml` sets
+`SERVER_VISIBILITY_PUBLIC=false`, `SERVER_VISIBILITY_LAN=true`, and
+`REQUIRE_USER_VERIFICATION=false`, so it works on an offline LAN with no account
+linking. To go public, set `SERVER_VISIBILITY_PUBLIC=true`,
+`REQUIRE_USER_VERIFICATION=true`, and provide `USERNAME`/`TOKEN`. (Every player
+still needs their own licensed Factorio, LAN or not.)
+
 Blank values in `.env` are ignored (the file value stands); mistyped values
 (e.g. a non-numeric `MAX_PLAYERS`, or `ALLOW_COMMANDS=banana`) abort the boot
 with a clear error instead of writing a broken config.
