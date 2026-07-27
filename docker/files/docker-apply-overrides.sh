@@ -5,8 +5,8 @@
 # was applied, otherwise the base path). Diagnostics go to stderr.
 #
 # An override is applied only when its env var is set AND non-empty, so blank
-# placeholders in .env are ignored rather than fatal. Bool/int/enum values are
-# validated before they reach jq to avoid silently writing a wrong-typed config.
+# placeholders are ignored rather than fatal. Bool/int/enum values are validated
+# before they reach jq to avoid silently writing a wrong-typed config.
 set -euo pipefail
 
 BASE="${1:-${CONFIG:-/factorio/config}/server-settings.json}"

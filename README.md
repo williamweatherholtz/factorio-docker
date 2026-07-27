@@ -26,7 +26,7 @@ compose stack where server configuration lives in editable repo files.
 ### First-time setup
 
 ```bash
-./setup.sh          # seeds ./config/*.json, ./saves, ./mods, ... and .env
+./setup.sh          # seeds ./config/*.json and the data directories
 docker compose up -d
 ```
 
@@ -36,11 +36,12 @@ docker compose up -d
    `config/map-gen-settings.json`, `config/map-settings.json` directly, then
    `docker compose restart factorio`. These files are bind-mounted and are never
    modified by the container.
-2. **Env overrides (hot keys).** Uncomment keys in `.env` to override the
-   matching `server-settings.json` values **at boot only** — the JSON file on
-   disk stays untouched (overrides render to a temp file inside the container).
+2. **Env overrides (hot keys).** Uncomment keys in the `environment:` block of
+   `docker-compose.yml` to override the matching `server-settings.json` values
+   **at boot only** — the JSON file on disk stays untouched (overrides render to
+   a temp file inside the container).
 
-| `.env` var | server-settings.json key | type |
+| environment var | server-settings.json key | type |
 |---|---|---|
 | `SERVER_NAME` | `name` | string |
 | `SERVER_DESCRIPTION` | `description` | string |
@@ -58,7 +59,10 @@ docker compose up -d
 `USERNAME`/`TOKEN` (from [factorio.com/profile](https://factorio.com/profile))
 link the server to your account — required to appear in the **public** in-game
 server browser, and reused for mod auto-download. They're written into the
-rendered settings at boot only, never saved to the committed JSON.
+rendered settings at boot only, never saved to the committed JSON. **Secrets:**
+`docker-compose.yml` is tracked in git, so don't paste a real `TOKEN` there —
+put it in a git-ignored `docker-compose.override.yml` (Compose merges it
+automatically) or directly in `config/server-settings.json` (host-only).
 
 **Default is a LAN preset.** The shipped `docker-compose.yml` sets
 `SERVER_VISIBILITY_PUBLIC=false`, `SERVER_VISIBILITY_LAN=true`, and
@@ -67,11 +71,11 @@ linking. To go public, set `SERVER_VISIBILITY_PUBLIC=true`,
 `REQUIRE_USER_VERIFICATION=true`, and provide `USERNAME`/`TOKEN`. (Every player
 still needs their own licensed Factorio, LAN or not.)
 
-Blank values in `.env` are ignored (the file value stands); mistyped values
+Blank values are ignored (the file value stands); mistyped values
 (e.g. a non-numeric `MAX_PLAYERS`, or `ALLOW_COMMANDS=banana`) abort the boot
 with a clear error instead of writing a broken config.
 
-Set `DEBUG=true` in `.env` for verbose boot diagnostics. If a config path shows
+Set `DEBUG=true` for verbose boot diagnostics. If a config path shows
 up as a **directory** the server aborts with guidance to run `./setup.sh`.
 
 ### Backups
@@ -430,7 +434,7 @@ project root that runs the published GHCR image. Clone the repo and use it:
 ```shell
 git clone https://github.com/williamweatherholtz/factorio-docker.git
 cd factorio-docker
-./setup.sh            # seeds ./config/*.json, data dirs, and .env
+./setup.sh            # seeds ./config/*.json and the data directories
 docker compose up -d
 ```
 

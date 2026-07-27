@@ -23,11 +23,4 @@ for name in server-settings map-gen-settings map-settings; do
   fi
 done
 
-if [[ -f .env ]]; then
-  echo "skip: .env already exists"
-else
-  cp .env.example .env
-  echo "seed: .env"
-fi
-
 echo "setup complete."

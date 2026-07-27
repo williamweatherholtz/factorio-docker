@@ -1,13 +1,17 @@
-# Factorio headless server — runs the published multi-arch image from GHCR.
-# First run:  ./setup.sh   (seeds ./config/*.json, data dirs, and .env)
+# Factorio headless server — single stack on the published multi-arch GHCR image.
+# First run:  ./setup.sh   (seeds ./config/*.json and the data directories)
 # Then:       docker compose up -d
 #
-# This is the single compose file for the project. Server parameters can be
-# tuned three ways, in increasing precedence:
-#   1. Edit config/server-settings.json directly (full fidelity), or
-#   2. Uncomment the tuning knobs in the `environment:` block below, or
-#   3. Put them in .env (git-ignored; good for secrets like TOKEN).
-# Env values override the JSON at boot without ever modifying the committed file.
+# Tune server parameters two ways (env overrides win, applied at boot WITHOUT
+# modifying the committed JSON):
+#   1. Edit config/server-settings.json directly, or
+#   2. Set variables in the `environment:` block below.
+#
+# SECRETS (TOKEN, passwords): do NOT put real values in this file — it's tracked
+# in git. Instead create a git-ignored docker-compose.override.yml (Compose merges
+# it automatically) with just the secret env, e.g.:
+#     services: { factorio: { environment: { USERNAME: "you", TOKEN: "abc123" } } }
+# ...or put username/token straight into config/server-settings.json (host-only).
 
 services:
   factorio:
@@ -19,7 +23,7 @@ services:
 
     # On SIGTERM Factorio saves the map and quits cleanly (verified ~2s); the
     # grace period is headroom for very large maps before Docker SIGKILLs.
-    # (Do NOT use SIGINT here — runuser, this image's PID 1, does not forward it,
+    # (Do NOT use SIGINT — runuser, this image's PID 1, does not forward it,
     # so the container would hang the full grace period then be killed unsaved.)
     stop_signal: SIGTERM
     stop_grace_period: 120s
@@ -28,42 +32,38 @@ services:
       - "34197:34197/udp"        # game — must be reachable by players
       - "27015:27015/tcp"        # RCON — on all interfaces by choice; guard via firewall
 
-    # Optional secrets/advanced vars; safe to omit (a fresh clone can `up` before
-    # ./setup.sh creates .env). Values here are overridden by `environment:` below.
-    env_file:
-      - path: .env
-        required: false
-
-    # --- Server tuning knobs -------------------------------------------------
-    # Uncomment any of these to override config/server-settings.json AT BOOT.
-    # The committed JSON file is never modified. Blank values are ignored;
-    # mistyped values (bad number/bool/enum) abort the boot with a clear error.
+    # All configuration is set directly here (no env_file). Uncomment and edit
+    # any knob to override config/server-settings.json AT BOOT. Blank values are
+    # ignored; mistyped values (bad number/bool/enum) abort the boot with a clear
+    # error. See the SECRETS note in the header before putting a real TOKEN here.
     environment:
-      # Space Age DLC is on by default; set "false" to disable. (Active so this
-      # block is a valid mapping — everything below is a commented example.)
-      DLC_SPACE_AGE: "true"
-      # LAN preset (default): not listed in the public browser, discoverable on
-      # LAN, and no auth-server verification — works even on an offline LAN.
-      # To go public instead: set PUBLIC "true", REQUIRE_USER_VERIFICATION "true",
-      # and provide USERNAME/TOKEN below.
+      DLC_SPACE_AGE: "true"                 # Space Age DLC; "false" to disable
+
+      # --- LAN preset (default): private, LAN-discoverable, no auth check ---
+      # Works on an offline LAN with no account linking. To go public: set
+      # PUBLIC "true", REQUIRE_USER_VERIFICATION "true", and provide USERNAME/TOKEN.
       SERVER_VISIBILITY_PUBLIC: "false"
       SERVER_VISIBILITY_LAN: "true"
       REQUIRE_USER_VERIFICATION: "false"
+
+      # --- server tuning (override config/server-settings.json) ---
       #SERVER_NAME: "My Factorio Server"
       #SERVER_DESCRIPTION: "Hosted with Docker"
-      #MAX_PLAYERS: "0"                    # 0 = unlimited
+      #MAX_PLAYERS: "0"                     # 0 = unlimited
       #AUTO_PAUSE: "true"
-      #AFK_AUTOKICK_INTERVAL: "0"          # minutes; 0 = never
-      #ALLOW_COMMANDS: "admins-only"       # true | false | admins-only
-      #AUTOSAVE_INTERVAL: "10"             # minutes
-      # --- account linking (factorio.com/profile) ---
-      # Enables public server-browser listing AND mod auto-download. Written into
-      # the rendered server-settings at boot; never persisted to the committed JSON.
-      #USERNAME: ""
-      #TOKEN: ""
+      #AFK_AUTOKICK_INTERVAL: "0"           # minutes; 0 = never
+      #ALLOW_COMMANDS: "admins-only"        # true | false | admins-only
+      #AUTOSAVE_INTERVAL: "10"              # minutes
+
+      # --- account linking (factorio.com/profile) — SEE SECRETS NOTE ABOVE ---
+      # Enables public server-browser listing AND mod auto-download. Prefer a
+      # git-ignored docker-compose.override.yml for these rather than committing.
+      #USERNAME: "FactorioUsername"
+      #TOKEN: "your-token-here"
+
       # --- orchestration (read by the entrypoint, not part of server-settings) ---
-      #UPDATE_MODS_ON_START: "true"        # needs USERNAME/TOKEN above
-      #DEBUG: "false"                      # verbose boot diagnostics
+      #UPDATE_MODS_ON_START: "true"         # needs USERNAME/TOKEN
+      #DEBUG: "false"                       # verbose boot diagnostics
       #PUID: "845"
       #PGID: "845"
 
