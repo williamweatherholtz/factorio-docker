@@ -10,14 +10,12 @@ trap 'rm -rf "$work"' EXIT
 cp "$REPO/setup.sh" "$work/"
 mkdir -p "$work/config"
 cp "$REPO/config/"*.example.json "$work/config/"
-cp "$REPO/.env.example" "$work/"
 
 ( cd "$work" && ./setup.sh >/dev/null )
 
 for name in server-settings map-gen-settings map-settings; do
   assert_file "$work/config/${name}.json" "seeded ${name}.json"
 done
-assert_file "$work/.env" "seeded .env"
 for d in saves mods scenarios script-output; do
   [[ -d "$work/$d" ]] || fail "missing dir $d"
 done

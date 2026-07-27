@@ -371,7 +371,7 @@ factorio_1:
 ```shell
 git clone https://github.com/williamweatherholtz/factorio-docker.git
 cd factorio-docker
-./setup.sh            # 生成 ./config/*.json、数据目录和 .env
+./setup.sh            # 生成 ./config/*.json 和数据目录
 docker compose up -d
 ```
 

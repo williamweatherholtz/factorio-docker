@@ -4,8 +4,8 @@ TEST_NAME="test-compose"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 source "$REPO/tests/lib.sh"
 
-# --- with .env present: full config resolves ---
-[[ -f "$REPO/.env" ]] || cp "$REPO/.env.example" "$REPO/.env"
+# No env_file — all config is inline in the environment: block, so `config`
+# resolves with nothing extra on disk.
 cfg="$(cd "$REPO" && docker compose config 2>/dev/null)" || fail "docker compose config failed"
 assert_contains "$cfg" "ghcr.io/williamweatherholtz/factorio:2.0.77" "image pinned to explicit version"
 assert_contains "$cfg" "/factorio/config" "config bind mount present"
@@ -17,14 +17,10 @@ assert_contains "$cfg" "max-size" "log rotation configured"
 assert_contains "$cfg" "SERVER_VISIBILITY_PUBLIC" "LAN preset: public visibility set"
 assert_contains "$cfg" "REQUIRE_USER_VERIFICATION" "LAN preset: user verification set"
 
+# No env_file directive should remain.
+[[ "$cfg" != *"env_file"* ]] || fail "compose should not use env_file (direct environment only)"
+
 # The build-from-source compose must be gone (single stack only).
 [[ ! -f "$REPO/docker/docker-compose.yml" ]] || fail "docker/docker-compose.yml should be removed (single compose)"
-
-# --- without .env: must still resolve (env_file required:false) ---
-env_backup=""
-if [[ -f "$REPO/.env" ]]; then env_backup="$(mktemp)"; mv "$REPO/.env" "$env_backup"; fi
-restore() { [[ -n "$env_backup" ]] && mv "$env_backup" "$REPO/.env" || true; }
-trap restore EXIT
-( cd "$REPO" && docker compose config >/dev/null 2>&1 ) || fail "compose must resolve without .env (required:false)"
 
 pass
